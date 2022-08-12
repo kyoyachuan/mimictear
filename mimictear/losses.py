@@ -6,10 +6,15 @@ from .contants import LossType
 
 class MinimaxLoss:
     def g_loss(self, fake_logits):
-        return -torch.log(torch.sigmoid(fake_logits)).mean()
+        target = torch.ones_like(fake_logits).cuda()
+        return F.binary_cross_entropy_with_logits(fake_logits, target)
 
     def d_loss(self, real_logits, fake_logits):
-        return -(torch.log(torch.sigmoid(real_logits)).mean() + torch.log(1 - torch.sigmoid(fake_logits)).mean())
+        target_ones = torch.ones_like(real_logits).cuda()
+        target_zeros = torch.zeros_like(fake_logits).cuda()
+        loss = F.binary_cross_entropy_with_logits(real_logits, target_ones)
+        loss += F.binary_cross_entropy_with_logits(fake_logits, target_zeros)
+        return loss
 
 
 class WassersteinLoss:

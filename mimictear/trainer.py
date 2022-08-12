@@ -94,7 +94,8 @@ class Trainer:
             wandb.log({"d_loss": mean_d_loss, "g_loss": mean_g_loss, "accuracy": accuracy, "generated_images": wandb.Image(
                 np.transpose(make_grid(imgs, value_range=(-1, 1)).cpu().numpy(), (1, 2, 0)))})
 
-            self.save_model(epoch)
+            if epoch % self.trainer_cfg.save_interval == 0 or epoch == self.trainer_cfg.niters - 1:
+                self.save_model(epoch)
 
     def train_step(self, epoch):
         pbar = tqdm(range(self.trainer_cfg.epoch_size))
