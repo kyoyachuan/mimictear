@@ -82,7 +82,7 @@ class IclevrDataset(Dataset):
 
 def get_data(batch_size, num_workers):
     dataset = IclevrDataset()
-    loader = DataLoader(dataset, batch_size=batch_size, num_workers=num_workers)
+    loader = DataLoader(dataset, shuffle=True, batch_size=batch_size, num_workers=num_workers)
     loader = iter(loader)
 
     while True:
