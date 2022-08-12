@@ -5,7 +5,7 @@ base:
 wandb:
   project: 'DLPLAB5'
   entity: 'kyoyachuan'
-  name: 'baseline'
+  name: 'wgan'
 
 generator:
   code_dim: 128
@@ -18,10 +18,10 @@ discriminator:
   projection: false
 
 trainer:
-  checkpoint_path: 'baseline'
+  checkpoint_path: 'wgan'
   save_interval: 10
   test_labels_path: 'test.json'
-  loss_type: 'minimax'
+  loss_type: 'wasserstein'
   clamp_values: 0.01
   niters: 200
   epoch_size: 1000
