@@ -5,7 +5,7 @@ base:
 wandb:
   project: 'DLPLAB5'
   entity: 'kyoyachuan'
-  name: 'wgan'
+  name: 'projection_hinge'
 
 generator:
   code_dim: 128
@@ -15,13 +15,13 @@ generator:
 
 discriminator:
   self_attention: false
-  projection: false
+  projection: true
 
 trainer:
-  checkpoint_path: 'wgan'
+  checkpoint_path: 'projection_hinge'
   save_interval: 10
   test_labels_path: 'test.json'
-  loss_type: 'wasserstein'
+  loss_type: 'hinge'
   clamp_values: 0.01
   niters: 200
   epoch_size: 1000

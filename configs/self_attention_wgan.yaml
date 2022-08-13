@@ -5,23 +5,23 @@ base:
 wandb:
   project: 'DLPLAB5'
   entity: 'kyoyachuan'
-  name: 'conditional_bn'
+  name: 'self_attention_wgan'
 
 generator:
   code_dim: 128
   cond_dim: 128
   self_attention: true
-  cbn: true
+  cbn: false
 
 discriminator:
   self_attention: true
   projection: true
 
 trainer:
-  checkpoint_path: 'conditional_bn'
+  checkpoint_path: 'self_attention_wgan'
   save_interval: 10
   test_labels_path: 'test.json'
-  loss_type: 'hinge'
+  loss_type: 'wasserstein'
   clamp_values: 0.01
   niters: 200
   epoch_size: 1000

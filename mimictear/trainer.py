@@ -124,6 +124,8 @@ class Trainer:
             if self.trainer_cfg.loss_type == LossType.WASSERSTEIN:
                 self.loss.clamp_params(self.discriminator.parameters(), self.trainer_cfg.clamp_values)
 
+            total_d_loss += d_loss_item
+
             if (i + 1) % self.trainer_cfg.n_d == 0:
                 self.generator.zero_grad()
                 requires_grad(self.generator, True)
@@ -140,10 +142,9 @@ class Trainer:
                 requires_grad(self.generator, False)
                 requires_grad(self.discriminator, True)
 
-            pbar.set_postfix(d_loss=d_loss_item, g_loss=g_loss_item)
+                total_g_loss += g_loss_item
 
-            total_d_loss += d_loss_item
-            total_g_loss += g_loss_item
+            pbar.set_postfix(d_loss=d_loss_item, g_loss=g_loss_item)
 
         return total_d_loss / self.trainer_cfg.epoch_size, total_g_loss / (
             self.trainer_cfg.epoch_size / self.trainer_cfg.n_d)

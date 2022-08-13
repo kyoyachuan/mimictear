@@ -77,7 +77,7 @@ class ConvBlock(nn.Module):
         deconv=False,
         n_class=None,
         cbn=False,
-        activation=leaky_relu,
+        activation=torch.relu,
         self_attention=False
     ):
         super().__init__()
@@ -137,13 +137,13 @@ class Generator(nn.Module):
         self.conv = nn.ModuleList(
             [
                 ConvBlock(512 + cond_dim, 512, padding=0, deconv=True, n_class=n_class, cbn=cbn),
-                ConvBlock(512, 512, deconv=True, n_class=n_class, cbn=cbn),
-                ConvBlock(512, 256, deconv=True, n_class=n_class, cbn=cbn, self_attention=self_attention),
-                ConvBlock(256, 128, deconv=True, n_class=n_class, cbn=cbn)
+                ConvBlock(512, 256, deconv=True, n_class=n_class, cbn=cbn),
+                ConvBlock(256, 128, deconv=True, n_class=n_class, cbn=cbn, self_attention=self_attention),
+                ConvBlock(128, 64, deconv=True, n_class=n_class, cbn=cbn)
             ]
         )
 
-        self.colorize = init_conv(nn.ConvTranspose2d(128, 3, 4, stride=2, padding=1))
+        self.colorize = init_conv(nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1))
 
     def forward(self, input, cond=None):
         out = torch.relu(self.lin_code(input))
@@ -174,11 +174,11 @@ class Discriminator(nn.Module):
         else:
             self.cond_embed = init_linear(nn.Linear(n_class, 512))
 
-        self.conv = nn.Sequential(ConvBlock(self.input_dim, 128),
-                                  ConvBlock(128, 256),
-                                  ConvBlock(256, 512, self_attention=self_attention),
-                                  ConvBlock(512, 512),
-                                  ConvBlock(512, 512))
+        self.conv = nn.Sequential(ConvBlock(self.input_dim, 64, activation=leaky_relu),
+                                  ConvBlock(64, 128, activation=leaky_relu),
+                                  ConvBlock(128, 256, activation=leaky_relu, self_attention=self_attention),
+                                  ConvBlock(256, 512, activation=leaky_relu),
+                                  ConvBlock(512, 512, activation=leaky_relu))
 
         self.linear = init_linear(nn.Linear(512, 1))
 

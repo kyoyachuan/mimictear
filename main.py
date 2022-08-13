@@ -19,7 +19,7 @@ def main(cfg: DictConfig) -> None:
     torch.manual_seed(cfg.base.seed)
     torch.cuda.manual_seed_all(cfg.base.seed)
 
-    dataloader = get_data(cfg.trainer.batch_size, cfg.base.num_workers)
+    dataloader = iter(get_data(cfg.trainer.batch_size, cfg.base.num_workers))
     test_labels = get_test_label(cfg.trainer.test_labels_path)
 
     generator = Generator(
