@@ -134,10 +134,9 @@ class Generator(nn.Module):
             self.cond_embed = init_linear(nn.Linear(n_class, cond_dim, bias=False))
         cond_dim = cond_dim if not cbn else 0
 
-        self.lin_code = init_linear(nn.Linear(code_dim, 1 * 1 * 512))
         self.conv = nn.ModuleList(
             [
-                ConvBlock(512 + cond_dim, 512, padding=0, deconv=True, n_class=n_class, cbn=cbn),
+                ConvBlock(code_dim + cond_dim, 512, padding=0, deconv=True, n_class=n_class, cbn=cbn),
                 ConvBlock(512, 256, deconv=True, n_class=n_class, cbn=cbn),
                 ConvBlock(256, 128, deconv=True, n_class=n_class, cbn=cbn, self_attention=self_attention),
                 ConvBlock(128, 64, deconv=True, n_class=n_class, cbn=cbn)
@@ -147,8 +146,8 @@ class Generator(nn.Module):
         self.colorize = init_conv(nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1))
 
     def forward(self, input, cond=None):
-        out = torch.relu(self.lin_code(input))
-        out = out.view(-1, 512, 1, 1)
+        out = input
+        out = out.view(-1, self.code_dim, 1, 1)
 
         if not self.cbn:
             out_cond = torch.relu(self.cond_embed(cond))
@@ -191,7 +190,7 @@ class Discriminator(nn.Module):
 
         out = self.conv(input)
         out = out.view(out.size(0), out.size(1), -1)
-        out = out.mean(2)
+        out = out.sum(2)
         out_linear = self.linear(out).squeeze(1)
 
         if self.projection:

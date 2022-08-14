@@ -8,7 +8,7 @@ from tqdm import tqdm
 import wandb
 from wandb import AlertLevel
 
-from .contants import LossType, CHECKPOINT_ROOT
+from .contants import LossType, CHECKPOINT_ROOT, EVAL_ITERS
 from .losses import get_loss
 from .dataloader import random_generate_labels
 
@@ -41,8 +41,8 @@ class Trainer:
         self.discriminator_cfg = discriminator_cfg
         self.wandb_cfg = wandb_cfg
 
-        self.g_optimizer = optim.Adam(self.generator.parameters(), lr=trainer_cfg.lr_g, betas=(0., 0.9))
-        self.d_optimizer = optim.Adam(self.discriminator.parameters(), lr=trainer_cfg.lr_d, betas=(0., 0.9))
+        self.g_optimizer = optim.Adam(self.generator.parameters(), lr=trainer_cfg.lr_g, betas=(0.5, 0.999))
+        self.d_optimizer = optim.Adam(self.discriminator.parameters(), lr=trainer_cfg.lr_d, betas=(0.5, 0.999))
         self.loss = get_loss(trainer_cfg.loss_type)
 
         self.checkpoint_path = os.path.join(CHECKPOINT_ROOT, trainer_cfg.checkpoint_path)
@@ -63,12 +63,13 @@ class Trainer:
         if not os.path.exists(self.checkpoint_path):
             os.makedirs(self.checkpoint_path)
 
-    def save_model(self, file_str):
+    def save_model(self, file_str, epoch=None):
         torch.save({
             "generator": self.generator,
             "discriminator": self.discriminator,
             "g_optimizer": self.g_optimizer,
             "d_optimizer": self.d_optimizer,
+            "epoch": epoch
         }, f"{self.checkpoint_path}/{file_str}.pth")
 
     def train(self):
@@ -76,8 +77,12 @@ class Trainer:
             mean_d_loss, mean_g_loss = self.train_step(epoch)
 
             self.generator.train(False)
-            imgs, labels = self.generate_test_images()
-            accuracy = self.evaluator.eval(imgs, labels)
+            accuracy = 0
+            for _ in range(EVAL_ITERS):
+                imgs, labels = self.generate_test_images()
+                acc = self.evaluator.eval(imgs, labels)
+                accuracy += acc
+            accuracy /= EVAL_ITERS
             self.generator.train(True)
 
             if accuracy > self.best_accuracy:
@@ -89,7 +94,7 @@ class Trainer:
                     text=f"Accuracy: {accuracy:.4f} at epoch {epoch}",
                     level=AlertLevel.INFO,
                 )
-                self.save_model('best')
+                self.save_model('best', epoch)
 
             wandb.log({"d_loss": mean_d_loss, "g_loss": mean_g_loss, "accuracy": accuracy}, step=epoch)
 
@@ -98,7 +103,7 @@ class Trainer:
                     make_grid(imgs, value_range=(-1, 1)).cpu().numpy(), (1, 2, 0)))}, step=epoch)
 
             if epoch % self.trainer_cfg.save_interval == 0 or epoch == self.trainer_cfg.niters - 1:
-                self.save_model(epoch)
+                self.save_model(epoch, epoch)
 
     def train_step(self, epoch):
         pbar = tqdm(range(self.trainer_cfg.epoch_size))
