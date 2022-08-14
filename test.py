@@ -5,6 +5,7 @@ import hydra
 from omegaconf import DictConfig
 import torch
 from torchvision.utils import save_image
+from imgcat import imgcat
 
 from mimictear.dataloader import get_test_label
 from mimictear.evaluator import Evaluation
@@ -36,6 +37,7 @@ def main(cfg: DictConfig) -> None:
     accuracy = evaluator.eval(fake_images, test_labels)
     save_image(fake_images + 0.5, image_path, padding=2)
     print(f'Accuracy: {accuracy}')
+    imgcat(open(image_path))
 
 
 if __name__ == '__main__':
