@@ -9,7 +9,7 @@ wandb:
 
 generator:
   code_dim: 128
-  cond_dim: 128
+  cond_dim: 64
   self_attention: true
   cbn: true
 
@@ -19,11 +19,12 @@ discriminator:
 
 trainer:
   checkpoint_path: 'conditional_bn_hinge'
-  save_interval: 10
+  save_interval: 50
+  log_image_interval: 20
   test_labels_path: 'test.json'
   loss_type: 'hinge'
   clamp_values: 0.01
-  niters: 200
+  niters: 500
   epoch_size: 1000
   n_d: 1
   lr_g: 1e-4

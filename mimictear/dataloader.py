@@ -55,7 +55,6 @@ class IclevrDataset(Dataset):
 
         self.transformations = transforms.Compose([
             transforms.Resize((64, 64)),
-            transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])

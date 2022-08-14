@@ -6,13 +6,14 @@ from torch.nn import functional as F
 
 
 def init_linear(linear):
-    init.xavier_uniform_(linear.weight)
-    linear.bias.data.zero_()
+    init.kaiming_uniform_(linear.weight)
+    if linear.bias is not None:
+        linear.bias.data.zero_()
     return linear
 
 
 def init_conv(conv):
-    init.xavier_uniform_(conv.weight)
+    init.kaiming_uniform_(conv.weight)
     if conv.bias is not None:
         conv.bias.data.zero_()
     return conv
@@ -52,12 +53,12 @@ class ConditionalNorm(nn.Module):
         super().__init__()
 
         self.bn = nn.BatchNorm2d(in_channel, affine=False)
-        self.embed_g = init_linear(nn.Linear(n_class, in_channel))
-        self.embed_b = init_linear(nn.Linear(n_class, in_channel))
+        self.embed_g = init_linear(nn.Linear(n_class, in_channel, bias=False))
+        self.embed_b = init_linear(nn.Linear(n_class, in_channel, bias=False))
 
     def forward(self, input, cond):
         out = self.bn(input)
-        gamma = self.embed_g(cond)
+        gamma = F.softplus(self.embed_g(cond))
         beta = self.embed_b(cond)
         gamma = gamma.unsqueeze(2).unsqueeze(3)
         beta = beta.unsqueeze(2).unsqueeze(3)
@@ -85,11 +86,11 @@ class ConvBlock(nn.Module):
         self.deconv = deconv
         if deconv:
             self.conv = init_conv(nn.ConvTranspose2d(
-                in_channel, out_channel, kernel_size, stride, padding
+                in_channel, out_channel, kernel_size, stride, padding, bias=False
             ))
         else:
             self.conv = init_conv(nn.Conv2d(
-                in_channel, out_channel, kernel_size, stride, padding
+                in_channel, out_channel, kernel_size, stride, padding, bias=False
             ))
 
         self.activation = activation
@@ -130,7 +131,7 @@ class Generator(nn.Module):
         self.cbn = cbn
 
         if not cbn:
-            self.cond_embed = init_linear(nn.Linear(n_class, cond_dim))
+            self.cond_embed = init_linear(nn.Linear(n_class, cond_dim, bias=False))
         cond_dim = cond_dim if not cbn else 0
 
         self.lin_code = init_linear(nn.Linear(code_dim, 1 * 1 * 512))
@@ -169,10 +170,10 @@ class Discriminator(nn.Module):
         self.input_dim = self.C
 
         if not projection:
-            self.cond_embed = init_linear(nn.Linear(n_class, self.C * self.H * self.W))
+            self.cond_embed = init_linear(nn.Linear(n_class, self.C * self.H * self.W, bias=False))
             self.input_dim *= 2
         else:
-            self.cond_embed = init_linear(nn.Linear(n_class, 512))
+            self.cond_embed = init_linear(nn.Linear(n_class, 512, bias=False))
 
         self.conv = nn.Sequential(ConvBlock(self.input_dim, 64, activation=leaky_relu),
                                   ConvBlock(64, 128, activation=leaky_relu),
@@ -184,13 +185,13 @@ class Discriminator(nn.Module):
 
     def forward(self, input, cond):
         if not self.projection:
-            out_cond = self.cond_embed(cond)
+            out_cond = leaky_relu(self.cond_embed(cond))
             out_cond = out_cond.view(-1, self.C, self.H, self.W)
             input = torch.cat([input, out_cond], 1)
 
         out = self.conv(input)
         out = out.view(out.size(0), out.size(1), -1)
-        out = out.sum(2)
+        out = out.mean(2)
         out_linear = self.linear(out).squeeze(1)
 
         if self.projection:

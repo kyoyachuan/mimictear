@@ -56,7 +56,7 @@ class Trainer:
             project=self.wandb_cfg.project,
             entity=self.wandb_cfg.entity,
             name=self.wandb_cfg.name,
-            config={**self.trainer_cfg.__dict__, **self.generator_cfg.__dict__, **self.discriminator_cfg.__dict__},
+            config={**self.trainer_cfg, **self.generator_cfg, **self.discriminator_cfg},
         )
 
     def init_checkpoint_dir(self):
@@ -85,14 +85,17 @@ class Trainer:
                 self.best_epoch = epoch
 
                 wandb.alert(
-                    title=f"New best generated accuracy ({self.wandb_cfg.name})",
+                    title=f"New best generated accuracy",
                     text=f"Accuracy: {accuracy:.4f} at epoch {epoch}",
                     level=AlertLevel.INFO,
                 )
                 self.save_model('best')
 
-            wandb.log({"d_loss": mean_d_loss, "g_loss": mean_g_loss, "accuracy": accuracy, "generated_images": wandb.Image(
-                np.transpose(make_grid(imgs, value_range=(-1, 1)).cpu().numpy(), (1, 2, 0)))})
+            wandb.log({"d_loss": mean_d_loss, "g_loss": mean_g_loss, "accuracy": accuracy}, step=epoch)
+
+            if epoch % self.trainer_cfg.log_image_interval == 0 or epoch == self.trainer_cfg.niters - 1:
+                wandb.log({"generated_images": wandb.Image(np.transpose(
+                    make_grid(imgs, value_range=(-1, 1)).cpu().numpy(), (1, 2, 0)))}, step=epoch)
 
             if epoch % self.trainer_cfg.save_interval == 0 or epoch == self.trainer_cfg.niters - 1:
                 self.save_model(epoch)
@@ -103,6 +106,7 @@ class Trainer:
 
         total_d_loss = 0
         total_g_loss = 0
+        g_loss_item = 0
         requires_grad(self.generator, False)
         requires_grad(self.discriminator, True)
 
