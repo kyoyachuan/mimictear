@@ -24,7 +24,7 @@ trainer:
   test_labels_path: 'test.json'
   loss_type: 'wasserstein'
   clamp_values: 0.01
-  niters: 500
+  niters: 800
   epoch_size: 1000
   n_d: 1
   lr_g: 1e-4

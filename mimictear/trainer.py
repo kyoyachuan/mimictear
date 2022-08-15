@@ -41,8 +41,8 @@ class Trainer:
         self.discriminator_cfg = discriminator_cfg
         self.wandb_cfg = wandb_cfg
 
-        self.g_optimizer = optim.Adam(self.generator.parameters(), lr=trainer_cfg.lr_g, betas=(0.5, 0.999))
-        self.d_optimizer = optim.Adam(self.discriminator.parameters(), lr=trainer_cfg.lr_d, betas=(0.5, 0.999))
+        self.g_optimizer = optim.Adam(self.generator.parameters(), lr=trainer_cfg.lr_g, betas=(0., 0.9))
+        self.d_optimizer = optim.Adam(self.discriminator.parameters(), lr=trainer_cfg.lr_d, betas=(0., 0.9))
         self.loss = get_loss(trainer_cfg.loss_type)
 
         self.checkpoint_path = os.path.join(CHECKPOINT_ROOT, trainer_cfg.checkpoint_path)
@@ -69,7 +69,9 @@ class Trainer:
             "discriminator": self.discriminator,
             "g_optimizer": self.g_optimizer,
             "d_optimizer": self.d_optimizer,
-            "epoch": epoch
+            "epoch": epoch,
+            "best_accuracy": self.best_accuracy,
+            "best_epoch": self.best_epoch
         }, f"{self.checkpoint_path}/{file_str}.pth")
 
     def train(self):

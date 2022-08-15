@@ -26,13 +26,13 @@ def main(cfg: DictConfig) -> None:
         code_dim=cfg.generator.code_dim,
         cond_dim=cfg.generator.cond_dim,
         n_class=test_labels.size(1),
-        self_attention=cfg.generator.self_attention,
         cbn=cfg.generator.cbn,
+        self_attention=cfg.generator.self_attention,
     )
     discriminator = Discriminator(
         n_class=test_labels.size(1),
-        projection=cfg.discriminator.projection,
         self_attention=cfg.discriminator.self_attention,
+        projection=cfg.discriminator.projection,
     )
 
     evaluator = Evaluation()
