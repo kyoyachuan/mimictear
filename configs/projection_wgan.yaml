@@ -1,5 +1,5 @@
 base:
-  seed: 1
+  seed: 0
   num_workers: 6
 
 wandb:
@@ -9,7 +9,7 @@ wandb:
 
 generator:
   code_dim: 128
-  cond_dim: 64
+  cond_dim: 128
   self_attention: false
   cbn: false
 
@@ -20,7 +20,7 @@ discriminator:
 trainer:
   checkpoint_path: 'projection_wgan'
   save_interval: 50
-  log_image_interval: 20
+  log_image_interval: 10
   test_labels_path: 'test.json'
   loss_type: 'wasserstein'
   clamp_values: 0.01

@@ -5,7 +5,7 @@ base:
 wandb:
   project: 'DLPLAB5'
   entity: 'kyoyachuan'
-  name: 'conditional_bn_wgan'
+  name: 'conditional_bn_hinge'
 
 generator:
   code_dim: 128
@@ -18,11 +18,11 @@ discriminator:
   projection: true
 
 trainer:
-  checkpoint_path: 'conditional_bn_wgan'
+  checkpoint_path: 'conditional_bn_hinge'
   save_interval: 50
   log_image_interval: 10
   test_labels_path: 'test.json'
-  loss_type: 'wasserstein'
+  loss_type: 'hinge'
   clamp_values: 0.01
   niters: 800
   epoch_size: 1000
