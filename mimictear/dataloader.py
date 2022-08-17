@@ -13,7 +13,7 @@ from .contants import IMAGES_ROOT, METADATAS_ROOT, LABEL_PATH, TRAIN_PATH
 def random_generate_labels(size, cols, min=1, max=3):
     labels = torch.zeros(size, cols)
     for i in range(size):
-        label_count = torch.randint(min, max, (1,))
+        label_count = torch.randint(min, max + 1, (1,))
         shuffle_idx = torch.randperm(cols)
         for s in shuffle_idx[:label_count]:
             labels[i, s] = 1
