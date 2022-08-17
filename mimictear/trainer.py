@@ -141,7 +141,8 @@ class Trainer:
                 self.generator.zero_grad()
                 requires_grad(self.generator, True)
                 requires_grad(self.discriminator, False)
-                input_class = random_generate_labels(self.trainer_cfg.batch_size, self.test_labels.size(1)).cuda()
+                input_class = random_generate_labels(self.trainer_cfg.batch_size, self.test_labels.size(1))
+                input_class = input_class.cuda()
                 fake_image = self.generator(
                     torch.randn(self.trainer_cfg.batch_size, self.generator_cfg.code_dim).cuda(), input_class
                 )

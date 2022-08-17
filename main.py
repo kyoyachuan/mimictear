@@ -26,8 +26,8 @@ def main(cfg: DictConfig) -> None:
         code_dim=cfg.generator.code_dim,
         cond_dim=cfg.generator.cond_dim,
         n_class=test_labels.size(1),
-        cbn=cfg.generator.cbn,
         self_attention=cfg.generator.self_attention,
+        cbn=cfg.generator.cbn
     )
     discriminator = Discriminator(
         n_class=test_labels.size(1),

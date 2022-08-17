@@ -111,10 +111,15 @@ class ConditionalNorm(nn.Module):
         self.bn = nn.BatchNorm2d(in_channel, affine=False)
         self.embed_g = spectral_init(nn.Linear(n_class, in_channel, bias=False))
         self.embed_b = spectral_init(nn.Linear(n_class, in_channel, bias=False))
+        # self.embed_g = nn.Linear(n_class, in_channel, bias=False)
+        # self.embed_b = nn.Linear(n_class, in_channel, bias=False)
+        # self.embed_g.weight.data[:, :in_channel] = 1
+        # self.embed_b.weight.data[:, :in_channel] = 0
 
     def forward(self, input, cond):
         out = self.bn(input)
         gamma = F.softplus(self.embed_g(cond))
+        # gamma = self.embed_g(cond)
         beta = self.embed_b(cond)
         gamma = gamma.unsqueeze(2).unsqueeze(3)
         beta = beta.unsqueeze(2).unsqueeze(3)
@@ -153,6 +158,8 @@ class ConvBlock(nn.Module):
         self.cbn = cbn
         if cbn:
             self.norm = ConditionalNorm(out_channel, n_class)
+        else:
+            self.norm = nn.BatchNorm2d(out_channel)
 
         self.self_attention = self_attention
         if self_attention:
@@ -190,13 +197,14 @@ class Generator(nn.Module):
         self.conv = nn.ModuleList(
             [
                 ConvBlock(512 + cond_dim, 512, padding=0, deconv=True, n_class=n_class, cbn=cbn),
-                ConvBlock(512, 256, deconv=True, n_class=n_class, cbn=cbn),
-                ConvBlock(256, 128, deconv=True, n_class=n_class, cbn=cbn, self_attention=self_attention),
-                ConvBlock(128, 64, deconv=True, n_class=n_class, cbn=cbn)
+                ConvBlock(512, 512, deconv=True, n_class=n_class, cbn=cbn),
+                ConvBlock(512, 512, deconv=True, n_class=n_class, cbn=cbn),
+                ConvBlock(512, 256, deconv=True, n_class=n_class, cbn=cbn, self_attention=self_attention),
+                ConvBlock(256, 128, deconv=True, n_class=n_class, cbn=cbn)
             ]
         )
 
-        self.colorize = spectral_init(nn.ConvTranspose2d(64, 3, 4, stride=2, padding=1))
+        self.colorize = spectral_init(nn.Conv2d(128, 3, 4, padding='same'))
 
     def forward(self, input, cond=None):
         out = torch.relu(self.lin_code(input))
@@ -227,10 +235,11 @@ class Discriminator(nn.Module):
         else:
             self.cond_embed = spectral_init(nn.Linear(n_class, 512, bias=False))
 
-        self.conv = nn.Sequential(ConvBlock(self.input_dim, 64, activation=leaky_relu),
-                                  ConvBlock(64, 128, activation=leaky_relu),
-                                  ConvBlock(128, 256, activation=leaky_relu, self_attention=self_attention),
-                                  ConvBlock(256, 512, activation=leaky_relu),
+        self.conv = nn.Sequential(ConvBlock(self.input_dim, 128, activation=leaky_relu),
+                                  ConvBlock(128, 256, activation=leaky_relu),
+                                  ConvBlock(256, 512, activation=leaky_relu, stride=1, self_attention=self_attention),
+                                  ConvBlock(512, 512, activation=leaky_relu),
+                                  ConvBlock(512, 512, activation=leaky_relu),
                                   ConvBlock(512, 512, activation=leaky_relu))
 
         self.linear = spectral_init(nn.Linear(512, 1))
@@ -243,7 +252,7 @@ class Discriminator(nn.Module):
 
         out = self.conv(input)
         out = out.view(out.size(0), out.size(1), -1)
-        out = out.mean(2)
+        out = out.sum(2)
         out_linear = self.linear(out).squeeze(1)
 
         if self.projection:
