@@ -5,7 +5,7 @@ base:
 wandb:
   project: 'DLPLAB5'
   entity: 'kyoyachuan'
-  name: 'conditional_bn_hinge'
+  name: 'conditional_bn_minimax_ori_v2'
 
 generator:
   code_dim: 128
@@ -18,15 +18,15 @@ discriminator:
   projection: true
 
 trainer:
-  checkpoint_path: 'conditional_bn_hinge'
+  checkpoint_path: 'conditional_bn_minimax_ori_v2'
   save_interval: 50
   log_image_interval: 10
   test_labels_path: 'test.json'
-  loss_type: 'hinge'
+  loss_type: 'minimax'
   clamp_values: 0.01
-  niters: 800
-  epoch_size: 1000
+  niters: 300
+  epoch_size: 500
   n_d: 1
-  lr_g: 1e-4
-  lr_d: 4e-4
-  batch_size: 64
+  lr_g: 2e-4
+  lr_d: 5e-5
+  batch_size: 128
