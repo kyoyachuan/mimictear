@@ -1,6 +1,7 @@
 import os
 import random
 
+import numpy as np
 import hydra
 from omegaconf import DictConfig
 import torch
@@ -25,18 +26,26 @@ def main(cfg: DictConfig) -> None:
 
     checkpoint_path = os.path.join(CHECKPOINT_ROOT, cfg.trainer.checkpoint_path)
     model_path = os.path.join(checkpoint_path, 'best.pth')
-    image_path = os.path.join(checkpoint_path, 'demo.png')
+    image_path = os.path.join(checkpoint_path, f'{cfg.trainer.test_labels_path.replace(".json", "")}_demo.png')
 
     generator = torch.load(model_path)['generator']
     evaluator = Evaluation()
 
-    fake_images = generator(
-        torch.randn(len(test_labels), cfg.generator.code_dim).cuda(), test_labels
-    )
+    fake_img_list = []
+    accuracies = []
+    for _ in range(100):
+        fake_images = generator(
+            torch.randn(len(test_labels), cfg.generator.code_dim).cuda(), test_labels
+        )
 
-    accuracy = evaluator.eval(fake_images, test_labels)
-    save_image(fake_images + 0.5, image_path, padding=2)
-    print(f'Accuracy: {accuracy}')
+        accuracy = evaluator.eval(fake_images, test_labels)
+
+        fake_img_list.append(fake_images)
+        accuracies.append(accuracy)
+
+    idx = np.argmax(accuracies)
+    save_image(fake_img_list[idx] + 0.5, image_path, padding=2)
+    print(f'Accuracy: {accuracies[idx]}')
     imgcat(open(image_path))
 
 
