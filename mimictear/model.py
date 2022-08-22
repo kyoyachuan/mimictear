@@ -5,20 +5,6 @@ from torch.nn import init
 from torch.nn import functional as F
 
 
-def init_linear(linear):
-    init.kaiming_uniform_(linear.weight)
-    if linear.bias is not None:
-        linear.bias.data.zero_()
-    return linear
-
-
-def init_conv(conv):
-    init.kaiming_uniform_(conv.weight)
-    if conv.bias is not None:
-        conv.bias.data.zero_()
-    return conv
-
-
 class SpectralNorm:
     def __init__(self, name):
         self.name = name
@@ -35,7 +21,6 @@ class SpectralNorm:
             u = u / u.norm()
         sigma = u @ weight_mat @ v
         weight_sn = weight / sigma
-        # weight_sn = weight_sn.view(*size)
 
         return weight_sn, u
 
@@ -111,15 +96,10 @@ class ConditionalNorm(nn.Module):
         self.bn = nn.BatchNorm2d(in_channel, affine=False)
         self.embed_g = spectral_init(nn.Linear(n_class, in_channel, bias=False))
         self.embed_b = spectral_init(nn.Linear(n_class, in_channel, bias=False))
-        # self.embed_g = nn.Linear(n_class, in_channel, bias=False)
-        # self.embed_b = nn.Linear(n_class, in_channel, bias=False)
-        # self.embed_g.weight.data[:, :in_channel] = 1
-        # self.embed_b.weight.data[:, :in_channel] = 0
 
     def forward(self, input, cond):
         out = self.bn(input)
         gamma = F.softplus(self.embed_g(cond))
-        # gamma = self.embed_g(cond)
         beta = self.embed_b(cond)
         gamma = gamma.unsqueeze(2).unsqueeze(3)
         beta = beta.unsqueeze(2).unsqueeze(3)
